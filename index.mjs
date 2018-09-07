@@ -1,11 +1,11 @@
-import { irc as irclib } from "./clients/irc";
-import { tg as tglib } from "./clients/tg";
+import { irc as irclib } from "./src/clients/irc";
+import { tg as tglib } from "./src/clients/tg";
 
 import EventEmitter from "events";
 
 const clients = [];
 
-const wrapper = class wrapper extends EventEmitter {
+const cuffeo = class wrapper extends EventEmitter {
   constructor(cfg) {
     super();
     for (let srv in cfg) {
@@ -37,4 +37,4 @@ const wrapper = class wrapper extends EventEmitter {
   }
 };
 
-export { wrapper, clients };
+export { cuffeo, clients };
