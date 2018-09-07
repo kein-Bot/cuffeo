@@ -1,4 +1,3 @@
-import { logger } from "../inc/log";
 import { getLevel } from "../inc/admin";
 
 import rp from "request-promise-native";
@@ -41,12 +40,10 @@ export class tg extends EventEmitter {
             resolve();
           }
           else {
-            logger.error(`(${this.network}) ${res}`);
             reject();
           }
         })
         .catch(err => {
-          logger.error(`(${this.network}) ${err.message}`);
           reject();
         });
     });
@@ -73,8 +70,6 @@ export class tg extends EventEmitter {
         }
       })
       .catch(err => {
-        if(err.statusCode !== 409)
-          logger.error(`(${this.network}) ${err.message}`);
       });
   }
   send(chatid, msg, reply = null) {
@@ -95,7 +90,6 @@ export class tg extends EventEmitter {
     rp(opts)
       .then(res => {})
       .catch(err => {
-        logger.error(`(${this.network}) ${err.message}`);
       });
   }
   sendmsg(mode, recipient, msg) {

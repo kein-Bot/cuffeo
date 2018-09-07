@@ -1,4 +1,3 @@
-import { logger } from "../inc/log";
 import { getLevel } from "../inc/admin";
 
 import modules from "./irc/index";
@@ -74,7 +73,6 @@ export class irc extends EventEmitter {
   }
   send(data) {
     this.socket.write(`${data}\n`);
-    logger.debug(`(${this.network}) out: ${data}`);
   }
   sendmsg(mode, recipient, msg) {
     msg = msg.split(/\r?\n/);
@@ -86,7 +84,6 @@ export class irc extends EventEmitter {
   }
   parse(data, [a, ...b] = data.split(/ +:/)) {
     let tmp = a.split(" ").concat(b);
-    logger.debug(`(${this.network}) in: ${[...tmp]}`);
     return data.charAt(0) === ":" ? {
       prefix: tmp.shift(),
       command: tmp.shift(),
