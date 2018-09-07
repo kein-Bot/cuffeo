@@ -1,5 +1,3 @@
-import { getLevel } from "../inc/admin";
-
 import rp from "request-promise-native";
 import EventEmitter from "events";
 
@@ -106,12 +104,12 @@ export class tg extends EventEmitter {
         nick: tmp.from.first_name,
         username: tmp.from.username,
         account: tmp.from.id.toString(),
-        level: getLevel("Telegram", {
+        /*level: getLevel("Telegram", {
           prefix: `${tmp.from.username}!${tmp.from.id}`,
           nick: tmp.from.first_name,
           username: tmp.from.username,
           account: tmp.from.id.toString()
-        })
+        })*/
       },
       self: this.server,
       message: tmp.text,
