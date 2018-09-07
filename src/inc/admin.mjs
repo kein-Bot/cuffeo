@@ -21,6 +21,8 @@ export const loadAdmins = () => {
 };
 loadAdmins();*/
 
+export let admins = [];
+
 export const getLevel = (network, user) => {
   let ret = {
     level: 0,

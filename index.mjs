@@ -1,13 +1,15 @@
 import { irc as irclib } from "./src/clients/irc";
 import { tg as tglib } from "./src/clients/tg";
+import { admins } from "./src/inc/admin";
 
 import EventEmitter from "events";
 
 const clients = [];
 
 const cuffeo = class wrapper extends EventEmitter {
-  constructor(cfg) {
+  constructor(cfg, _admins = []) {
     super();
+    admins = _admins;
     for (let srv in cfg) {
       if(cfg[srv].val.enabled) {
         switch (cfg[srv].val.type) {
