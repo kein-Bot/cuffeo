@@ -77,7 +77,7 @@ export class tg extends EventEmitter {
     if(msg.length === 0 || msg.length > 2048)
       return false;
     const opts = {
-      method: 'POST',
+      method: "POST",
       body: {
         chat_id: chatid,
         text: msg,
