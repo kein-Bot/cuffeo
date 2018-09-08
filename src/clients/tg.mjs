@@ -1,5 +1,5 @@
 import { getLevel } from "../inc/admin";
-import rp from "request-promise-native";
+import fetch from "../inc/fetch";
 import EventEmitter from "events";
 
 export class tg extends EventEmitter {
@@ -25,7 +25,8 @@ export class tg extends EventEmitter {
   }
   connect() {
     return new Promise((resolve, reject) => {
-      rp(`${this.api}/getMe`, { json: true })
+      fetch(`${this.api}/getMe`)
+        .then(res => res.json())
         .then(res => {
           if(res.ok) {
             this.me = res.result;
@@ -48,7 +49,8 @@ export class tg extends EventEmitter {
     });
   }
   poll() {
-    rp(`${this.api}/getUpdates?offset=${this.lastUpdate}&allowed_updates=message`, { json:true })
+    fetch(`${this.api}/getUpdates?offset=${this.lastUpdate}&allowed_updates=message`)
+      .then(res => res.json())
       .then(res => {
         if(res.ok && res.result.length > 0) {
           res = res.result[res.result.length-1];
@@ -76,17 +78,15 @@ export class tg extends EventEmitter {
       return false;
     const opts = {
       method: 'POST',
-      uri: `${this.api}/sendMessage`,
       body: {
         chat_id: chatid,
         text: msg,
         parse_mode: "HTML"
-      },
-      json: true
+      }
     };
     if(reply)
       opts.body.reply_to_message_id = reply;
-    rp(opts)
+    fetch(`${this.api}/sendMessage`, opts)
       .then(res => {})
       .catch(err => {
       });
