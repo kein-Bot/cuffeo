@@ -1,6 +1,7 @@
 import http from "http";
 import https from "https";
 import url from "url";
+import querystring from "querystring";
 
 export default (a, options = {}, link = url.parse(a)) => new Promise((resolve, reject) => {
   options = {...{
@@ -10,7 +11,7 @@ export default (a, options = {}, link = url.parse(a)) => new Promise((resolve, r
   }, ...options};
   let body = "";
   if(options.method === "POST") {
-    body = JSON.stringify(options.body);
+    body = querystring.stringify(options.body);
     delete options.body;
     options.headers = {
       "Content-Type": "application/x-www-form-urlencoded",
