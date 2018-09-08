@@ -1,6 +1,6 @@
 import { irc as irclib } from "./src/clients/irc";
 import { tg as tglib } from "./src/clients/tg";
-import * as admins from "./src/inc/admin";
+import { admins } from "./src/inc/admin";
 
 import EventEmitter from "events";
 

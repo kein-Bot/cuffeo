@@ -1,6 +1,6 @@
-let _admins = [];
+export let admins = { admins: [] };
 
-const getLevel = (network, user) => {
+export const getLevel = (network, user) => {
   let ret = {
     level: 0,
     verified: false
@@ -9,7 +9,7 @@ const getLevel = (network, user) => {
     return "user has to be an object!";
   if (!user.account || !user.prefix)
     return ret;
-  for(let admin of _admins) {
+  for(let admin of admins.admins) {
     if (admin.account === user.account.toLowerCase() && admin.network === network.toLowerCase()) {
       ret = {
         level: admin.level,
@@ -18,8 +18,4 @@ const getLevel = (network, user) => {
     }
   };
   return ret;
-};
-
-export {
-  _admins, getLevel
 };

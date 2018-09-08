@@ -4,7 +4,6 @@
   "description": "lul",
   "main": "index.mjs",
   "scripts": {
-    "start": "node --experimental-modules test.mjs"
   },
   "repository": {
     "type": "git",
