@@ -6,7 +6,7 @@ import EventEmitter from "events";
 
 const clients = [];
 
-const cuffeo = class wrapper extends EventEmitter {
+const cuffeo = class cuffeo extends EventEmitter {
   constructor(cfg, _admins = []) {
     super();
     admins.admins = _admins;

@@ -1,5 +1,7 @@
+let _admins = [];
+
 export default {
-  admins: [],
+  admins: _admins,
   getLevel: (network, user) => {
     let ret = {
       level: 0,
@@ -9,7 +11,7 @@ export default {
       return "user has to be an object!";
     if (!user.account || !user.prefix)
       return ret;
-    for(let admin of admins) {
+    for(let admin of _admins) {
       if (admin.account === user.account.toLowerCase() && admin.network === network.toLowerCase()) {
         ret = {
           level: admin.level,
