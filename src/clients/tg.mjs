@@ -1,4 +1,3 @@
-import { getLevel } from "../inc/admin";
 import fetch from "../inc/fetch";
 import EventEmitter from "events";
 
@@ -104,13 +103,7 @@ export class tg extends EventEmitter {
         prefix: `${tmp.from.username}!${tmp.from.id}`,
         nick: tmp.from.first_name,
         username: tmp.from.username,
-        account: tmp.from.id.toString(),
-        level: getLevel("Telegram", {
-          prefix: `${tmp.from.username}!${tmp.from.id}`,
-          nick: tmp.from.first_name,
-          username: tmp.from.username,
-          account: tmp.from.id.toString()
-        })
+        account: tmp.from.id.toString()
       },
       self: this.server,
       message: tmp.text,
