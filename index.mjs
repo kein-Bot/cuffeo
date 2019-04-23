@@ -11,20 +11,20 @@ const cuffeo = class cuffeo extends EventEmitter {
     super();
     admins.admins = _admins;
     for (let srv in cfg) {
-      if(cfg[srv].val.enabled) {
-        switch (cfg[srv].val.type) {
+      if(cfg[srv].enabled) {
+        switch (cfg[srv].type) {
         case "irc":
           clients.push({
-            name: cfg[srv].val.network,
+            name: cfg[srv].network,
             type: "irc",
-            client: new irclib(cfg[srv].val)
+            client: new irclib(cfg[srv])
           });
           break;
         case "tg":
           clients.push({
             name: "tg",
             type: "tg",
-            client: new tglib(cfg[srv].val)
+            client: new tglib(cfg[srv])
           });
           break;
         }
