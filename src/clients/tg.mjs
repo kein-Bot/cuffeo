@@ -1,4 +1,4 @@
-import fetch from "../inc/fetch";
+import fetch from "flumm-fetch-cookies";
 import EventEmitter from "events";
 
 export class tg extends EventEmitter {

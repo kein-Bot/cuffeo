@@ -5,7 +5,7 @@ import EventEmitter from "events";
 
 const clients = [];
 
-const cuffeo = class cuffeo extends EventEmitter {
+export default class cuffeo extends EventEmitter {
   constructor(cfg) {
     super();
     for (let srv in cfg) {
@@ -36,5 +36,3 @@ const cuffeo = class cuffeo extends EventEmitter {
     });
   }
 };
-
-export { cuffeo, clients };
