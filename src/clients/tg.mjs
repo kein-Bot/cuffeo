@@ -79,7 +79,7 @@ export class tg extends EventEmitter {
       method: "POST",
       body: {
         chat_id: chatid,
-        text: msg,
+        text: msg.split("\n").length > 1 ? `<code>${msg}</code>` : msg,
         parse_mode: "HTML"
       }
     };
@@ -103,14 +103,20 @@ export class tg extends EventEmitter {
         prefix: `${tmp.from.username}!${tmp.from.id}`,
         nick: tmp.from.first_name,
         username: tmp.from.username,
-        account: tmp.from.id.toString()
+        account: tmp.from.id.toString(),
+        level: getLevel("Telegram", {
+          prefix: `${tmp.from.username}!${tmp.from.id}`,
+          nick: tmp.from.first_name,
+          username: tmp.from.username,
+          account: tmp.from.id.toString()
+        })
       },
       self: this.server,
       message: tmp.text,
       time: tmp.date,
       raw: tmp,
       reply: msg => this.send(tmp.chat.id, this.format(msg), tmp.message_id),
-      replyAction: msg => this.send(tmp.chat.id, this.format(`f0ck ${msg}`), tmp.message_id),
+      replyAction: msg => this.send(tmp.chat.id, this.format(`Uwe ${msg}`), tmp.message_id),
       replyNotice: msg => this.send(tmp.chat.id, this.format(msg), tmp.message_id),
       _user: this.server.user
     };
@@ -125,21 +131,3 @@ export class tg extends EventEmitter {
     ;
   }
 }
-
-Map.prototype.hasi = function(val) {
-  for (let [key] of this)
-    if(key.toLowerCase() === val.toLowerCase())
-      return true;
-  return false;
-};
-Map.prototype.geti = function(val) {
-  for (let [key, value] of this)
-    if(key.toLowerCase() === val.toLowerCase())
-      return value;
-  return false;
-};
-Map.prototype.deli = function(val) {
-  for (let [key] of this)
-    if(key.toLowerCase() === val.toLowerCase())
-      this.delete(key);
-};

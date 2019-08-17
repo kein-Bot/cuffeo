@@ -75,21 +75,3 @@ export default client => {
     this.server.user.set(msg.params[1], tmpuser);
   }.bind(client));
 };
-
-Map.prototype.hasi = function (val) {
-  for (let [key] of this)
-    if (key.toLowerCase() === val.toLowerCase())
-      return true;
-  return false;
-};
-Map.prototype.geti = function (val) {
-  for (let [key, value] of this)
-    if (key.toLowerCase() === val.toLowerCase())
-      return value;
-  return false;
-};
-Map.prototype.deli = function (val) {
-  for (let [key] of this)
-    if (key.toLowerCase() === val.toLowerCase())
-      this.delete(key);
-};

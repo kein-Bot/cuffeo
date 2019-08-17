@@ -1,6 +1,11 @@
 export default client => {
   client._cmd.set("PRIVMSG", function (msg) { // privmsg
-    this.emit("data", msg.params[1] === "\u0001VERSION\u0001" ? ["ctcp:version", this.reply(msg)] : ["message", this.reply(msg)]);
+    if(msg.params[1] === "\u0001VERSION\u0001")
+      return this.emit("data", ["ctcp:version", this.reply(msg)]);
+    else if(msg.params[1].match(/^\u0001PING .*\u0001/i))
+      return this.emit("data", ["ctcp:ping", this.reply(msg)]);
+    else
+      this.emit("data", ["message", this.reply(msg)]);
   }.bind(client));
 
   client._cmd.set("NOTICE", function (msg) { // notice

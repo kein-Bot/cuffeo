@@ -5,9 +5,11 @@ import tls from "tls";
 import EventEmitter from "events";
 
 const colors = {
-  red: "\x0304$1\x0304",
-  blue: "\x0312$1\x0312",
-  yellow: "\x0308$1\x0308"
+  red: "04",
+  blue: "12",
+  yellow: "08",
+  green: "03",
+  brown: "05"
 };
 const msgmodes = {
   normal: "PRIVMSG {recipient} :{msg}",
@@ -17,7 +19,7 @@ const msgmodes = {
 
 const replaceColor = (match, color, text) => {
   if (colors.hasOwnProperty(color))
-    return colors[color].replace("\$1", text);
+    return `\x03${colors[color]}${text}\x0F`;
   return text;
 };
 
@@ -45,7 +47,6 @@ export class irc extends EventEmitter {
     this.server = {
       set: this.set,
       motd: "",
-      debug: false,
       me: {},
       channel: [],
       user: new Map()
@@ -80,16 +81,14 @@ export class irc extends EventEmitter {
       this.send( msgmodes[mode].replace("{recipient}", recipient).replace("{msg}", e) );
     });
   }
-  parse(data, [a, ...b] = data.split(/ +:/)) {
-    let tmp = a.split(" ").concat(b);
-    return data.charAt(0) === ":" ? {
-      prefix: tmp.shift(),
-      command: tmp.shift(),
-      params: tmp
-    } : {
-      prefix: null,
-      command: tmp.shift(),
-      params: tmp
+  parse(data, [a, ...b] = data.split(/ +:/), tmp = a.split(" ").concat(b)) {
+    let prefix = data.charAt(0) === ":" ? tmp.shift() : null
+      , command = tmp.shift()
+      , params = command.toLowerCase() === "privmsg" ? [ tmp.shift(), tmp.join(" :") ] : tmp;
+    return {
+      prefix: prefix,
+      command: command,
+      params: params
     };
   }
   reply(tmp) {
@@ -100,9 +99,13 @@ export class irc extends EventEmitter {
       channelid: tmp.params[0],
       user: Object.assign(this.parsePrefix(tmp.prefix), {
         account: this.server.user.geti(this.parsePrefix(tmp.prefix).nick).account,
-        prefix: tmp.prefix.charAt(0) === ":" ? tmp.prefix.substring(1) : tmp.prefix
+        prefix: tmp.prefix.charAt(0) === ":" ? tmp.prefix.substring(1) : tmp.prefix,
+        level: getLevel(this.network, Object.assign(this.parsePrefix(tmp.prefix), {
+          account: this.server.user.geti(this.parsePrefix(tmp.prefix).nick).account,
+          prefix: tmp.prefix.charAt(0) === ":" ? tmp.prefix.substring(1) : tmp.prefix
+        }))
       }),
-      message: tmp.params[1],
+      message: tmp.params[1].replace(/\u0002/, ""),
       time: ~~(Date.now() / 1000),
       raw: tmp,
       reply: msg => this.sendmsg("normal", tmp.params[0], this.format(""+msg)),
@@ -128,8 +131,8 @@ export class irc extends EventEmitter {
   whois(user, force = false) {
     user = user.toLowerCase();
     let tmpuser = {};
-    if(this.server.user.hasi(user) && !force) {
-      tmpuser = this.server.user.geti(user);
+    if(this.server.user.has(user) && !force) {
+      tmpuser = this.server.user.get(user);
       if(tmpuser.cached >= ~~(Date.now() / 1000) - this._recachetime)
         return;
     }
@@ -167,21 +170,3 @@ export class irc extends EventEmitter {
       ;
   }
 }
-
-Map.prototype.hasi = function(val) {
-  for (let [key] of this)
-    if(key.toLowerCase() === val.toLowerCase())
-      return true;
-  return false;
-};
-Map.prototype.geti = function(val) {
-  for (let [key, value] of this)
-    if(key.toLowerCase() === val.toLowerCase())
-      return value;
-  return false;
-};
-Map.prototype.deli = function(val) {
-  for (let [key] of this)
-    if(key.toLowerCase() === val.toLowerCase())
-      this.delete(key);
-};
