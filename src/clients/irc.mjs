@@ -4,13 +4,25 @@ import net from "net";
 import tls from "tls";
 import EventEmitter from "events";
 
-const colors = {
-  red: "04",
-  blue: "12",
-  yellow: "08",
-  green: "03",
-  brown: "05"
-};
+const colors = [
+    "white",
+    "black",
+    "navy",
+    "green",
+    "red",
+    "brown",
+    "purple",
+    "orange",
+    "yellow",
+    "lightgreen",
+    "teal",
+    "cyan",
+    "blue",
+    "magenta",
+    "gray",
+    "lightgray"
+].reduce((a, b, i) => ({...a, ...{[b]: i.toString().padStart(2, 0)}}), {});
+
 const msgmodes = {
   normal: "PRIVMSG {recipient} :{msg}",
   action: "PRIVMSG {recipient} :\u0001ACTION {msg}\u0001",
