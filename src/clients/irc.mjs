@@ -100,10 +100,10 @@ export class irc extends EventEmitter {
       user: Object.assign(this.parsePrefix(tmp.prefix), {
         account: this.server.user.geti(this.parsePrefix(tmp.prefix).nick).account,
         prefix: tmp.prefix.charAt(0) === ":" ? tmp.prefix.substring(1) : tmp.prefix,
-        level: getLevel(this.network, Object.assign(this.parsePrefix(tmp.prefix), {
+        /*level: getLevel(this.network, Object.assign(this.parsePrefix(tmp.prefix), {
           account: this.server.user.geti(this.parsePrefix(tmp.prefix).nick).account,
           prefix: tmp.prefix.charAt(0) === ":" ? tmp.prefix.substring(1) : tmp.prefix
-        }))
+        }))*/
       }),
       message: tmp.params[1].replace(/\u0002/, ""),
       time: ~~(Date.now() / 1000),
