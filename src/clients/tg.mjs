@@ -70,6 +70,7 @@ export class tg extends EventEmitter {
         }
       })
       .catch(err => {
+          this.emit("error", err);
       });
   }
   send(chatid, msg, reply = null) {
@@ -88,6 +89,7 @@ export class tg extends EventEmitter {
     fetch(`${this.api}/sendMessage`, opts)
       .then(res => {})
       .catch(err => {
+          this.emit("error", err);
       });
   }
   sendmsg(mode, recipient, msg) {
@@ -103,13 +105,7 @@ export class tg extends EventEmitter {
         prefix: `${tmp.from.username}!${tmp.from.id}`,
         nick: tmp.from.first_name,
         username: tmp.from.username,
-        account: tmp.from.id.toString(),
-        level: getLevel("Telegram", {
-          prefix: `${tmp.from.username}!${tmp.from.id}`,
-          nick: tmp.from.first_name,
-          username: tmp.from.username,
-          account: tmp.from.id.toString()
-        })
+        account: tmp.from.id.toString()
       },
       self: this.server,
       message: tmp.text,
