@@ -12,8 +12,8 @@ export default class cuffeo extends EventEmitter {
     this.libs = {};
 
     return (async () => {
-      this.libs = await this.loadLibs();
-      this.clients = this.registerClients(cfg);
+      this.libs    = await this.loadLibs();
+      this.clients = await this.registerClients(cfg);
       return this;
     })();
   }
@@ -25,16 +25,18 @@ export default class cuffeo extends EventEmitter {
     }
     return _libs;
   }
-  registerClients(cfg) {
-    return cfg.filter(e => e.enabled).map(srv => {
+  async registerClients(cfg) {
+    return cfg.filter(e => e.enabled).map(async srv => {
       if(!Object.keys(this.libs).includes(srv.type))
         throw new Error(`not supported client: ${srv.type}`);
 
-      return {
+      const client = {
         name: srv.network,
         type: srv.type,
-        client: new this.libs[srv.type](srv)
+        client: await new this.libs[srv.type](srv)
       };
+      client.client.on("data", ([type, data]) => this.emit(type, data));
+      return client;
     });
   }
 };

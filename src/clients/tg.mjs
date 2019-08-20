@@ -12,70 +12,61 @@ export default class tg extends EventEmitter {
     this.api = `https://api.telegram.org/bot${this.token}`;
     this.lastUpdate = 0;
     this.lastMessage = 0;
+    this.poller = null;
     this.server = {
       set: this.set,
       channel: new Map(),
       user: new Map(),
       me: {}
     };
-    this.connect().then(() => {
-      this.poller = setInterval(() => { this.poll(); }, this.options.pollrate);
-    });
+
+    return (async () => {
+      await this.connect();
+      await this.poll();
+      return this;
+    })();
   }
-  connect() {
-    return new Promise((resolve, reject) => {
-      fetch(`${this.api}/getMe`)
-        .then(res => res.json())
-        .then(res => {
-          if(res.ok) {
-            this.me = res.result;
-            this.server.me = {
-              nickname: res.result.first_name,
-              username: res.result.username,
-              account: res.result.id.toString(),
-              prefix: `${res.result.username}!${res.result.id.toString()}`,
-              id: res.result.id.toString()
-            };
-            resolve();
-          }
-          else {
-            reject();
-          }
-        })
-        .catch(err => {
-          reject();
+  async connect() {
+    const res = await (await fetch(`${this.api}/getMe`)).json();
+    if (!res.ok)
+      throw this.emit("data", ["error", res.description]); // more infos
+    
+    this.me = res.result;
+    this.server.me = {
+      nickname: res.result.first_name,
+      username: res.result.username,
+      account: res.result.id.toString(),
+      prefix: `${res.result.username}!${res.result.id.toString()}`,
+      id: res.result.id.toString()
+    };
+  }
+  async poll() {
+    let res = await (await fetch(`${this.api}/getUpdates?offset=${this.lastUpdate}&allowed_updates=message`)).json();
+    setTimeout(async () => { await this.poll(); }, this.options.pollrate);
+    if (!res.ok)
+      return this.emit("data", ["error", res.description]);
+    if (res.result.length === 0)
+      return;
+    
+    res = res.result[res.result.length - 1];
+    this.lastUpdate = res.update_id + 1;
+    if (res.message.date >= ~~(Date.now() / 1000) - 10 && res.message.message_id !== this.lastMessage) {
+      this.lastMessage = res.message.message_id;
+      if (!this.server.user.has(res.message.from.username || res.message.from.first_name)) {
+        this.server.user.set(res.message.from.username || res.message.from.first_name, {
+          nick: res.message.from.first_name,
+          username: res.message.from.username,
+          account: res.message.from.id.toString(),
+          prefix: `${res.message.from.username}!${res.message.from.id.toString()}`,
+          id: res.message.from.id
         });
-    });
+      }
+      return this.emit("data", ["message", this.reply(res.message)]);
+    }
   }
-  poll() {
-    fetch(`${this.api}/getUpdates?offset=${this.lastUpdate}&allowed_updates=message`)
-      .then(res => res.json())
-      .then(res => {
-        if(res.ok && res.result.length > 0) {
-          res = res.result[res.result.length-1];
-          this.lastUpdate = res.update_id + 1;
-          if (res.message.date >= ~~(Date.now() / 1000) - 10 && res.message.message_id !== this.lastMessage) {
-            this.lastMessage = res.message.message_id;
-            if(!this.server.user.has(res.message.from.username || res.message.from.first_name)) {
-              this.server.user.set(res.message.from.username || res.message.from.first_name, {
-                nick: res.message.from.first_name,
-                username: res.message.from.username,
-                account: res.message.from.id.toString(),
-                prefix: `${res.message.from.username}!${res.message.from.id.toString()}`,
-                id: res.message.from.id
-              });
-            }
-            this.emit("data", ["message", this.reply(res.message)]);
-          }
-        }
-      })
-      .catch(err => {
-          this.emit("error", err);
-      });
-  }
-  send(chatid, msg, reply = null) {
-    if(msg.length === 0 || msg.length > 2048)
-      return false;
+  async send(chatid, msg, reply = null) {
+    if (msg.length === 0 || msg.length > 2048)
+      return this.emit("data", ["error", "msg to short or to long lol"]);
     const opts = {
       method: "POST",
       body: {
@@ -84,16 +75,12 @@ export default class tg extends EventEmitter {
         parse_mode: "HTML"
       }
     };
-    if(reply)
+    if (reply)
       opts.body.reply_to_message_id = reply;
-    fetch(`${this.api}/sendMessage`, opts)
-      .then(res => {})
-      .catch(err => {
-          this.emit("error", err);
-      });
+    await fetch(`${this.api}/sendMessage`, opts);
   }
-  sendmsg(mode, recipient, msg) {
-    this.send(recipient, msg);
+  async sendmsg(mode, recipient, msg) {
+    await this.send(recipient, msg);
   }
   reply(tmp) {
     return {
