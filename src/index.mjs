@@ -18,12 +18,10 @@ export default class cuffeo extends EventEmitter {
     })();
   }
   async loadLibs() {
-    const _libs = {};
-    for (const client of (await fs.promises.readdir(`${__dirname}/clients`)).filter(f => f.endsWith(".mjs"))) {
-      const lib = await import(`./clients/${client}`);
-      _libs[lib.default.name] = lib.default;
-    }
-    return _libs;
+    return (await (Promise.all((await fs.promises.readdir(`${__dirname}/clients`)).filter(f => f.endsWith(".mjs")).map(async client => {
+      const lib = (await import(`./clients/${client}`)).default;
+      return { [lib.name]: lib };
+    })))).reduce((a, b) => ({ ...a, ...b }));
   }
   async registerClients(cfg) {
     return cfg.filter(e => e.enabled).map(async srv => {
