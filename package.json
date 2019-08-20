@@ -2,7 +2,7 @@
   "name": "cuffeo",
   "version": "1.0.1",
   "description": "lul",
-  "main": "index.mjs",
+  "main": "src/index.mjs",
   "scripts": {
   },
   "repository": {

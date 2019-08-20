@@ -35,7 +35,7 @@ const replaceColor = (match, color, text) => {
   return text;
 };
 
-export class irc extends EventEmitter {
+export default class irc extends EventEmitter {
   constructor(options) {
     super();
     this.options = options || {};

@@ -1,7 +1,7 @@
 import fetch from "flumm-fetch-cookies";
 import EventEmitter from "events";
 
-export class tg extends EventEmitter {
+export default class tg extends EventEmitter {
   constructor(options) {
     super();
     this.options = options || {};
