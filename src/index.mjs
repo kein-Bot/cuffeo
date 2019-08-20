@@ -1,9 +1,8 @@
-import _fs from "fs";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import EventEmitter from "events";
 
-const fs = _fs.promises;
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default class cuffeo extends EventEmitter {
@@ -13,34 +12,29 @@ export default class cuffeo extends EventEmitter {
     this.libs = {};
 
     return (async () => {
-      await this.loadLibs();
-      this.clients = await this.init(cfg);
+      this.libs = await this.loadLibs();
+      this.clients = this.registerClients(cfg);
       return this;
     })();
   }
   async loadLibs() {
-    const _clients = (await fs.readdir(`${__dirname}/clients`)).filter(f => f.endsWith(".mjs"));
-    for(const client of _clients) {
+    const _libs = {};
+    for (const client of (await fs.promises.readdir(`${__dirname}/clients`)).filter(f => f.endsWith(".mjs"))) {
       const lib = await import(`./clients/${client}`);
-      this.libs[lib.default.name] = lib.default;
+      _libs[lib.default.name] = lib.default;
     }
-    return;
+    return _libs;
   }
-  async init(cfg) {
-    const clients = [];
-    for (const srv in cfg) {
-      if(!cfg[srv].enabled)
-        return new Error("not enabled");
-      if(!Object.keys(this.libs).includes(cfg[srv].type))
-        return new Error("not supported client");
+  registerClients(cfg) {
+    return cfg.filter(e => e.enabled).map(srv => {
+      if(!Object.keys(this.libs).includes(srv.type))
+        throw new Error(`not supported client: ${srv.type}`);
 
-      clients.push({
-        name: cfg[srv].network,
-        type: cfg[srv].type,
-        client: new this.libs[cfg[srv].type](cfg[srv])
-      });
-    }
-    clients.forEach(client => client.client.on("data", e => this.emit(e[0], e[1])));
-    return clients;
+      return {
+        name: srv.network,
+        type: srv.type,
+        client: new this.libs[srv.type](srv)
+      };
+    });
   }
 };
