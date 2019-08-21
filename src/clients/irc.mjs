@@ -83,7 +83,7 @@ export default class irc extends EventEmitter {
     this.socket.write(`${data}\n`);
   }
   sendmsg(mode, recipient, msg) {
-    msg = msg.split(/\r?\n/);
+    msg = Array.isArray(msg) ? msg : msg.split(/\r?\n/);
     if (msg.length > 6)
       return this.emit("data", ["error", "too many lines"]);
     msg.forEach(e => this.send( msgmodes[mode].replace("{recipient}", recipient).replace("{msg}", e) ));
@@ -111,7 +111,7 @@ export default class irc extends EventEmitter {
       message: tmp.params[1].replace(/\u0002/, ""),
       time: ~~(Date.now() / 1000),
       raw: tmp,
-      reply: msg => this.sendmsg("normal", tmp.params[0], this.format(""+msg)),
+      reply: msg => this.sendmsg("normal", tmp.params[0], msg),
       replyAction: msg => this.sendmsg("action", tmp.params[0], this.format(""+msg)),
       replyNotice: msg => this.sendmsg("notice", tmp.params[0], this.format(""+msg)),
       self: this.server,
@@ -170,6 +170,6 @@ export default class irc extends EventEmitter {
       .replace(/\[b\](.*?)\[\/b\]/g, "\x02$1\x02") // bold
       .replace(/\[i\](.*?)\[\/i\]/g, "\x1D$1\x1D") // italic
       .replace(/\[color=(.*?)](.*?)\[\/color\]/g, replaceColor) // colors
-      ;
+    ;
   }
 }
