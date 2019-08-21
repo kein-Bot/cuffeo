@@ -1,26 +1,20 @@
-import modules from "./irc/index";
-
+import _fs from "fs";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 import net from "net";
 import tls from "tls";
 import EventEmitter from "events";
 
+const fs = _fs.promises;
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
 const colors = [
-    "white",
-    "black",
-    "navy",
-    "green",
-    "red",
-    "brown",
-    "purple",
-    "orange",
-    "yellow",
-    "lightgreen",
-    "teal",
-    "cyan",
-    "blue",
-    "magenta",
-    "gray",
-    "lightgray"
+  "white",      "black",   "navy",
+  "green",      "red",     "brown",
+  "purple",     "orange",  "yellow",
+  "lightgreen", "teal",    "cyan",
+  "blue",       "magenta", "gray",
+  "lightgray"
 ].reduce((a, b, i) => ({...a, ...{[b]: i.toString().padStart(2, 0)}}), {});
 
 const msgmodes = {
@@ -54,8 +48,6 @@ export default class irc extends EventEmitter {
     this._recachetime = 60 * 30; // 30 minutes
     this._cmd = new Map();
 
-    modules.forEach(mod => mod(this));
-
     this.server = {
       set: this.set,
       motd: "",
@@ -70,7 +62,7 @@ export default class irc extends EventEmitter {
     }, () => {
       this.send(`NICK ${this.nickname}`);
       this.send(`USER ${this.username} 0 * : ${this.realname}`);
-      if(this.options.sasl)
+      if (this.options.sasl)
         this.send("CAP LS");
     });
     this.socket.setEncoding("utf-8");
@@ -81,22 +73,25 @@ export default class irc extends EventEmitter {
           this._cmd.get(cmd.command)(cmd);
       })
     });
+
+    return (async () => {
+      (await fs.readdir(`${__dirname}/irc`)).filter(f => f.endsWith(".mjs")).forEach(async mod => (await import(`./irc/${mod}`)).default(this));
+      return this;
+    })();
   }
   send(data) {
     this.socket.write(`${data}\n`);
   }
   sendmsg(mode, recipient, msg) {
     msg = msg.split(/\r?\n/);
-    if(msg.length > 6)
-      return false;
-    msg.forEach(e => {
-      this.send( msgmodes[mode].replace("{recipient}", recipient).replace("{msg}", e) );
-    });
+    if (msg.length > 6)
+      return this.emit("data", ["error", "too many lines"]);
+    msg.forEach(e => this.send( msgmodes[mode].replace("{recipient}", recipient).replace("{msg}", e) ));
   }
   parse(data, [a, ...b] = data.split(/ +:/), tmp = a.split(" ").concat(b)) {
-    let prefix = data.charAt(0) === ":" ? tmp.shift() : null
-      , command = tmp.shift()
-      , params = command.toLowerCase() === "privmsg" ? [ tmp.shift(), tmp.join(" :") ] : tmp;
+    const prefix = data.charAt(0) === ":" ? tmp.shift() : null
+        , command = tmp.shift()
+        , params = command.toLowerCase() === "privmsg" ? [ tmp.shift(), tmp.join(" :") ] : tmp;
     return {
       prefix: prefix,
       command: command,
@@ -109,14 +104,10 @@ export default class irc extends EventEmitter {
       network: this.network,
       channel: tmp.params[0],
       channelid: tmp.params[0],
-      user: Object.assign(this.parsePrefix(tmp.prefix), {
+      user: { ...this.parsePrefix(tmp.prefix), ...{
         account: this.server.user.geti(this.parsePrefix(tmp.prefix).nick).account,
-        prefix: tmp.prefix.charAt(0) === ":" ? tmp.prefix.substring(1) : tmp.prefix,
-        /*level: getLevel(this.network, Object.assign(this.parsePrefix(tmp.prefix), {
-          account: this.server.user.geti(this.parsePrefix(tmp.prefix).nick).account,
-          prefix: tmp.prefix.charAt(0) === ":" ? tmp.prefix.substring(1) : tmp.prefix
-        }))*/
-      }),
+        prefix: tmp.prefix.charAt(0) === ":" ? tmp.prefix.substring(1) : tmp.prefix
+      }},
       message: tmp.params[1].replace(/\u0002/, ""),
       time: ~~(Date.now() / 1000),
       raw: tmp,
@@ -137,15 +128,15 @@ export default class irc extends EventEmitter {
   join(channel) {
     this.send(`JOIN ${(typeof channel === "object") ? channel.join(",") : channel}`);
   }
-  part(channel, msg=false) {
+  part(channel, msg = false) {
     this.send(`PART ${(typeof channel === "object") ? channel.join(",") : channel}${msg ? " " + msg : " part"}`);
   }
   whois(user, force = false) {
     user = user.toLowerCase();
     let tmpuser = {};
-    if(this.server.user.has(user) && !force) {
+    if (this.server.user.has(user) && !force) {
       tmpuser = this.server.user.get(user);
-      if(tmpuser.cached >= ~~(Date.now() / 1000) - this._recachetime)
+      if (tmpuser.cached >= ~~(Date.now() / 1000) - this._recachetime)
         return;
     }
 
@@ -166,8 +157,8 @@ export default class irc extends EventEmitter {
   }
   parsePrefix(prefix) {
     prefix = /:?(.*)\!(.*)@(.*)/.exec(prefix);
-    if(!prefix)
-      return false; //this.parsePrefix(arguments);
+    if (!prefix)
+      return false;
     return {
       nick: prefix[1],
       username: prefix[2],
