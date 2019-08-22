@@ -1,14 +1,14 @@
-export default client => {
-  client._cmd.set("372", function (msg) { // motd_entry
-    this.server.motd += `${msg.params[1]}\n`;
-  }.bind(client));
+export default bot => {
+  bot._cmd.set("372", msg => { // motd_entry
+    bot.server.motd += `${msg.params[1]}\n`;
+  });
 
-  client._cmd.set("375", function (msg) { // motd_start
-    this.server.motd = `${msg.params[1]}\n`;
-  }.bind(client));
+  bot._cmd.set("375", msg => { // motd_start
+    bot.server.motd = `${msg.params[1]}\n`;
+  });
 
-  client._cmd.set("376", function (msg) { // motd_end
-    this.server.motd += `${msg.params[1]}\n`;
-    this.emit("data", ["motd", this.server.motd]);
-  }.bind(client));
+  bot._cmd.set("376", msg => { // motd_end
+    bot.server.motd += `${msg.params[1]}\n`;
+    bot.emit("data", ["motd", bot.server.motd]);
+  });
 };

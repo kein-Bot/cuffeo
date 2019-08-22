@@ -1,6 +1,6 @@
-export default client => {
-  client._cmd.set("464", function (msg) { // motd_entry
-    if (this.options.password.length > 0 && !this.options.sasl)
-      this.send(`PASS ${this.options.password}`);
-  }.bind(client));
+export default bot => {
+  bot._cmd.set("464", msg => { // motd_entry
+    if (bot.options.password.length > 0 && !bot.options.sasl)
+      bot.send(`PASS ${bot.options.password}`);
+  });
 };

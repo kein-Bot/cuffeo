@@ -1,13 +1,13 @@
-export default client => {
-  client._cmd.set("INVITE", function (msg) { // invite
-    const user = this.parsePrefix(msg.prefix);
+export default bot => {
+  bot._cmd.set("INVITE", msg => { // invite
+    const user = bot.parsePrefix(msg.prefix);
     const channel = msg.params[1];
 
-    if(!this.server.channel.includes(channel)) {
-      this.join(channel);
+    if(!bot.server.channel.includes(channel)) {
+      bot.join(channel);
       setTimeout(() => {
-        this.send(`PRIVMSG ${channel} :Hi. Wurde von ${user.nick} eingeladen.`);
+        bot.send(`PRIVMSG ${channel} :Hi. Wurde von ${user.nick} eingeladen.`);
       }, 1000);
     }
-  }.bind(client));
+  });
 };

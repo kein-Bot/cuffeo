@@ -1,27 +1,17 @@
 const max = 400;
 let whois = [];
+let chan;
 
-export default client => {
-  client._cmd.set("352", function (msg) { // who_entry
-    if (!this.server.channel[msg.params[1]])
-      this.server.channel[msg.params[1]] = new Map();
-    this.server.channel[msg.params[1]].set(msg.params[5], { // chan
-      nick: msg.params[5],
-      username: msg.params[2],
-      hostname: msg.params[3]
-    });
+export default bot => {
+  bot._cmd.set("352", msg => { // who_entry
+    chan = msg.params[1];
     whois.push(msg.params[5]);
-  }.bind(client));
+  });
 
-  client._cmd.set("315", function (msg) { // who_end
-    this.whois(whois.reduce((a, b) => {
-      a += `${b},`;
-      if(a.length >= max) {
-        this.whois(a.slice(0, -1));
-        a = "";
-      }
-      return a;
-    }, "").slice(0, -1));
+  bot._cmd.set("315", msg => { // who_end
+    bot.server.channel.set(chan, whois);
+    whois = [...new Set(whois)];
+    Array(Math.ceil(whois.length / 10)).fill().map(_ => whois.splice(0, 10)).forEach(l => bot.whois(l));
     whois = [];
-  }.bind(client));
+  });
 };

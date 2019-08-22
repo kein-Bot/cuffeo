@@ -1,14 +1,14 @@
-export default client => {
-  client._cmd.set("PRIVMSG", function (msg) { // privmsg
+export default bot => {
+  bot._cmd.set("PRIVMSG", msg => { // privmsg
     if(msg.params[1] === "\u0001VERSION\u0001")
-      return this.emit("data", ["ctcp:version", this.reply(msg)]);
+      return bot.emit("data", ["ctcp:version", bot.reply(msg)]);
     else if(msg.params[1].match(/^\u0001PING .*\u0001/i))
-      return this.emit("data", ["ctcp:ping", this.reply(msg)]);
+      return bot.emit("data", ["ctcp:ping", bot.reply(msg)]);
     else
-      this.emit("data", ["message", this.reply(msg)]);
-  }.bind(client));
+      bot.emit("data", ["message", bot.reply(msg)]);
+  });
 
-  client._cmd.set("NOTICE", function (msg) { // notice
-    this.emit("data", ["notice", msg.params[1]]);
-  }.bind(client));
+  bot._cmd.set("NOTICE", msg => { // notice
+    bot.emit("data", ["notice", msg.params[1]]);
+  });
 };

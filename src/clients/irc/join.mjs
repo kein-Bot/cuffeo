@@ -1,5 +1,5 @@
-export default client => {
-  client._cmd.set("JOIN", function (msg) { // join
-    this.send(`WHO ${msg.params[0]}`);
-  }.bind(client));
+export default bot => {
+  bot._cmd.set("JOIN", msg => { // join
+    bot.send(`WHO ${msg.params[0]}`);
+  });
 };

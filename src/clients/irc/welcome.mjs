@@ -1,6 +1,6 @@
-export default client => {
-  client._cmd.set("001", function (msg) { // welcome
-    this.join(this.options.channels);
-    this.emit("data", ["connected", msg.params[1]]);
-  }.bind(client));
+export default bot => {
+  bot._cmd.set("001", msg => { // welcome
+    bot.join(bot.options.channels);
+    bot.emit("data", ["connected", msg.params[1]]);
+  });
 };

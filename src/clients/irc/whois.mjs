@@ -1,37 +1,38 @@
-export default client => {
-  client._cmd.set("307", function (msg) { // whois_identified (ircd-hybrid)
+export default bot => {
+  bot._cmd.set("307", msg => { // whois_identified (ircd-hybrid)
     let tmpuser = {};
-    if (this.server.user.hasi(msg.params[1]))
-      tmpuser = this.server.user.geti(msg.params[1]);
+    if (bot.server.user.has(msg.params[1]))
+      tmpuser = bot.server.user.get(msg.params[1]);
     tmpuser.account = msg.params[1];
     tmpuser.registered = true;
-    this.server.user.set(msg.params[1], tmpuser);
-  }.bind(client));
+    bot.server.user.set(msg.params[1], tmpuser);
+  });
 
-  client._cmd.set("311", function (msg) { // whois_userdata
+  bot._cmd.set("311", msg => { // whois_userdata
     let tmpuser = {};
-    if (this.server.user.hasi(msg.params[1]))
-      tmpuser = this.server.user.geti(msg.params[1]);
+    if (bot.server.user.has(msg.params[1]))
+      tmpuser = bot.server.user.get(msg.params[1]);
     tmpuser.nickname = msg.params[1];
     tmpuser.username = msg.params[2];
     tmpuser.hostname = msg.params[3];
     tmpuser.realname = msg.params[5];
     tmpuser.prefix = `${msg.params[1]}!${msg.params[2]}@${msg.params[3]}`;
-    this.server.user.set(msg.params[1], tmpuser);
-  }.bind(client));
+    bot.server.user.set(msg.params[1], tmpuser);
+  });
 
-  client._cmd.set("313", function (msg) { // whois_oper
+  bot._cmd.set("313", msg => { // whois_oper
     let tmpuser = {};
-    if (this.server.user.hasi(msg.params[1]))
-      tmpuser = this.server.user.geti(msg.params[1]);
+    if (bot.server.user.has(msg.params[1]))
+      tmpuser = bot.server.user.get(msg.params[1]);
     tmpuser.oper = true;
-    this.server.user.set(msg.params[1], tmpuser);
-  }.bind(client));
+    bot.server.user.set(msg.params[1], tmpuser);
+  });
 
-  client._cmd.set("318", function (msg) { // whois_end
+  bot._cmd.set("318", msg => { // whois_end
     let tmpuser = {};
-    if (this.server.user.hasi(msg.params[1]))
-      tmpuser = this.server.user.geti(msg.params[1]);
+    bot.emit("data", ["info", `whois < ${msg.params[1]}`]);
+    if (bot.server.user.has(msg.params[1]))
+      tmpuser = bot.server.user.get(msg.params[1]);
     tmpuser = {
       nickname: tmpuser.nickname || false,
       username: tmpuser.username || false,
@@ -44,18 +45,20 @@ export default client => {
       channels: tmpuser.channels || [],
       cached: ~~(Date.now() / 1000)
     };
-    if(msg.params[0] === msg.params[1])
-      this.server.me = tmpuser;
-    this.server.user.set(msg.params[1], tmpuser);
-  }.bind(client));
+    bot.server.user.set(msg.params[1], tmpuser);
+    if(msg.params[0] == msg.params[1]) {
+      bot.server.me = tmpuser;
+      bot.server.user.delete(msg.params[1]);
+    }
+  });
 
-  client._cmd.set("319", function (msg) { // whois_chanlist
+  bot._cmd.set("319", msg => { // whois_chanlist
     let tmpchan = new Map()
       , tmpuser = {};
-    if (this.server.user.hasi(msg.params[1])) {
-      tmpuser = this.server.user.geti(msg.params[1]);
-      if (tmpuser.channels)
-        tmpchan = new Map(tmpuser.channels);
+    if (bot.server.user.has(msg.params[1])) {
+      tmpuser = bot.server.user.get(msg.params[1]);
+    if (tmpuser.channels)
+      tmpchan = new Map(tmpuser.channels);
     }
     let chans = msg.params[2].trim().split(" ");
     for (let chan in chans) {
@@ -63,15 +66,15 @@ export default client => {
       tmpchan.set(`#${chan[1]}`, chan[0]);
     }
     tmpuser.channels = tmpchan;
-    this.server.user.set(msg.params[1], tmpuser);
-  }.bind(client));
+    bot.server.user.set(msg.params[1], tmpuser);
+  });
 
-  client._cmd.set("330", function (msg) { // whois_authed_as (snircd)
+  bot._cmd.set("330", msg => { // whois_authed_as (snircd)
     let tmpuser = {};
-    if (this.server.user.hasi(msg.params[1]))
-      tmpuser = this.server.user.geti(msg.params[1]);
+    if (bot.server.user.has(msg.params[1]))
+      tmpuser = bot.server.user.get(msg.params[1]);
     tmpuser.account = msg.params[2];
     tmpuser.registered = true;
-    this.server.user.set(msg.params[1], tmpuser);
-  }.bind(client));
+    bot.server.user.set(msg.params[1], tmpuser);
+  });
 };

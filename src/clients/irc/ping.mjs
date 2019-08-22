@@ -1,5 +1,5 @@
-export default client => {
-  client._cmd.set("PING", function (msg) { // ping
-    this.send(`PONG ${msg.params.join``}`);
-  }.bind(client));
+export default bot => {
+  bot._cmd.set("PING", msg => { // ping
+    bot.send(`PONG ${msg.params.join``}`);
+  });
 };

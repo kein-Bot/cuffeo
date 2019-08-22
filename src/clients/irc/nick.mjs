@@ -1,8 +1,8 @@
-export default client => {
-  client._cmd.set("NICK", function (msg) { // nickchange
-    let prefix = this.parsePrefix(msg.prefix);
-    if (this.server.user.hasi(prefix.nick))
-      this.server.user.deli(prefix.nick);
-    this.whois(msg.params[0], true); // force
-  }.bind(client));
+export default bot => {
+  bot._cmd.set("NICK", msg => { // nickchange
+    let prefix = bot.parsePrefix(msg.prefix);
+    if (bot.server.user.has(prefix.nick))
+      bot.server.user.del(prefix.nick);
+    bot.whois(msg.params[0], true); // force
+  });
 };

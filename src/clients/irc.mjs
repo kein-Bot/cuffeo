@@ -52,7 +52,7 @@ export default class irc extends EventEmitter {
       set: this.set,
       motd: "",
       me: {},
-      channel: [],
+      channel: new Map(),
       user: new Map()
     };
     this.socket = (this.options.ssl ? tls : net).connect({
@@ -105,17 +105,17 @@ export default class irc extends EventEmitter {
       channel: tmp.params[0],
       channelid: tmp.params[0],
       user: { ...this.parsePrefix(tmp.prefix), ...{
-        account: this.server.user.geti(this.parsePrefix(tmp.prefix).nick).account,
+        account: this.server.user.get(this.parsePrefix(tmp.prefix).nick).account,
         prefix: tmp.prefix.charAt(0) === ":" ? tmp.prefix.substring(1) : tmp.prefix
       }},
       message: tmp.params[1].replace(/\u0002/, ""),
       time: ~~(Date.now() / 1000),
       raw: tmp,
-      reply: msg => this.sendmsg("normal", tmp.params[0], msg),
-      replyAction: msg => this.sendmsg("action", tmp.params[0], this.format(""+msg)),
-      replyNotice: msg => this.sendmsg("notice", tmp.params[0], this.format(""+msg)),
+      reply:       msg => this.sendmsg("normal", tmp.params[0], msg),
+      replyAction: msg => this.sendmsg("action", tmp.params[0], msg),
+      replyNotice: msg => this.sendmsg("notice", tmp.params[0], msg),
       self: this.server,
-      _chan: this.server.channel[tmp.params[0]],
+      _chan: this.server.channel.get(tmp.params[0]),
       _user: this.server.user,
       _cmd: this._cmd,
       join: chan => this.join(chan),
@@ -128,32 +128,22 @@ export default class irc extends EventEmitter {
   join(channel) {
     this.send(`JOIN ${(typeof channel === "object") ? channel.join(",") : channel}`);
   }
+  who(channel) {
+    this.send(`WHO ${channel}`);
+  }
   part(channel, msg = false) {
     this.send(`PART ${(typeof channel === "object") ? channel.join(",") : channel}${msg ? " " + msg : " part"}`);
   }
-  whois(user, force = false) {
-    user = user.toLowerCase();
-    let tmpuser = {};
-    if (this.server.user.has(user) && !force) {
-      tmpuser = this.server.user.get(user);
-      if (tmpuser.cached >= ~~(Date.now() / 1000) - this._recachetime)
-        return;
+  whois(userlist, force = false, whois = []) {
+    for(const u of (typeof userlist === "object") ? userlist : userlist.split(",")) {
+      let tmpuser = { cached: 0 };
+      if (this.server.user.has(u) && !force)
+        tmpuser = this.server.user.get(u);
+      if (tmpuser.cached < ~~(Date.now() / 1000) - this._recachetime)
+        whois.push(u);
     }
-
-    tmpuser = {
-      nickname: tmpuser.nickname || false,
-      username: tmpuser.username || false,
-      hostname: tmpuser.hostname || false,
-      realname: tmpuser.realname || false,
-      account: tmpuser.account || false,
-      prefix: tmpuser.prefix || false,
-      registered: tmpuser.registered || false,
-      oper: tmpuser.oper || false,
-      channels: tmpuser.channels || [],
-      cached: ~~(Date.now() / 1000)
-    };
-    this.server.user.set(user, tmpuser);
-    this.send(`WHOIS ${user}`);
+    this.emit("data", ["info", `whois > ${whois}`]);
+    this.send(`WHOIS ${whois}`);
   }
   parsePrefix(prefix) {
     prefix = /:?(.*)\!(.*)@(.*)/.exec(prefix);
