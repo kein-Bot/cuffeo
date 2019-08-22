@@ -86,7 +86,7 @@ export default class irc extends EventEmitter {
     msg = Array.isArray(msg) ? msg : msg.split(/\r?\n/);
     if (msg.length > 6)
       return this.emit("data", ["error", "too many lines"]);
-    msg.forEach(e => this.send( msgmodes[mode].replace("{recipient}", recipient).replace("{msg}", e) ));
+    msg.forEach(e => this.send( msgmodes[mode].replace("{recipient}", recipient).replace("{msg}", this.format(e)) ));
   }
   parse(data, [a, ...b] = data.split(/ +:/), tmp = a.split(" ").concat(b)) {
     const prefix = data.charAt(0) === ":" ? tmp.shift() : null
