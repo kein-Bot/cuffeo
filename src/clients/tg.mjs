@@ -65,19 +65,21 @@ export default class tg extends EventEmitter {
     }
   }
   async send(chatid, msg, reply = null) {
+    msg = Array.isArray(msg) ? msg.join("\n") : msg;
     if (msg.length === 0 || msg.length > 2048)
       return this.emit("data", ["error", "msg to short or to long lol"]);
     const opts = {
       method: "POST",
       body: {
         chat_id: chatid,
-        text: msg.split("\n").length > 1 ? `<code>${msg}</code>` : msg,
+        text: this.format(msg),//msg.split("\n").length > 1 ? `<code>${this.format(msg)}</code>` : this.format(msg),
         parse_mode: "HTML"
       }
     };
     if (reply)
       opts.body.reply_to_message_id = reply;
-    await fetch(`${this.api}/sendMessage`, opts);
+    const res = await (await fetch(`${this.api}/sendMessage`, opts)).json();
+    console.log(res);
   }
   async sendmsg(mode, recipient, msg) {
     await this.send(recipient, msg);
@@ -98,9 +100,9 @@ export default class tg extends EventEmitter {
       message: tmp.text,
       time: tmp.date,
       raw: tmp,
-      reply: msg => this.send(tmp.chat.id, this.format(msg), tmp.message_id),
-      replyAction: msg => this.send(tmp.chat.id, this.format(`Uwe ${msg}`), tmp.message_id),
-      replyNotice: msg => this.send(tmp.chat.id, this.format(msg), tmp.message_id),
+      reply: msg => this.send(tmp.chat.id, msg, tmp.message_id),
+      replyAction: msg => this.send(tmp.chat.id, `Uwe ${msg}`, tmp.message_id),
+      replyNotice: msg => this.send(tmp.chat.id, msg, tmp.message_id),
       _user: this.server.user
     };
   }
@@ -108,6 +110,7 @@ export default class tg extends EventEmitter {
     return msg.toString()
       .split("<").join("&lt;")
       .split(">").join("&gt;")
+      .split("&").join("&amp;")
       .replace(/\[b\](.*?)\[\/b\]/g, "<b>$1</b>") // bold
       .replace(/\[i\](.*?)\[\/i\]/g, "<i>$1</i>") // italic
       .replace(/\[color=(.*?)](.*?)\[\/color\]/g, "$2")
