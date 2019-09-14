@@ -41,44 +41,38 @@ export default class tg extends EventEmitter {
     };
   }
   async poll() {
-    try {
-      let res = await (await fetch(`${this.api}/getUpdates?offset=${this.lastUpdate}&allowed_updates=message`)).json();
-      if (!res.ok)
-        return this.emit("data", ["error", res.description]);
-      if (res.result.length === 0)
-        return;
+    let res = await (await fetch(`${this.api}/getUpdates?offset=${this.lastUpdate}&allowed_updates=message`)).json();
+    setTimeout(async () => { await this.poll(); }, this.options.pollrate);
+    if (!res.ok)
+      return this.emit("data", ["error", res.description]);
+    if (res.result.length === 0)
+      return;
     
-      res = res.result[res.result.length - 1];
-      this.lastUpdate = res.update_id + 1;
-      if (res.message.date >= ~~(Date.now() / 1000) - 10 && res.message.message_id !== this.lastMessage) {
-        this.lastMessage = res.message.message_id;
-        if (!this.server.user.has(res.message.from.username || res.message.from.first_name)) {
-          this.server.user.set(res.message.from.username || res.message.from.first_name, {
-            nick: res.message.from.first_name,
-            username: res.message.from.username,
-            account: res.message.from.id.toString(),
-            prefix: `${res.message.from.username}!${res.message.from.id.toString()}`,
-            id: res.message.from.id
-          });
-        }
-        return this.emit("data", ["message", this.reply(res.message)]);
+    res = res.result[res.result.length - 1];
+    this.lastUpdate = res.update_id + 1;
+    if (res.message.date >= ~~(Date.now() / 1000) - 10 && res.message.message_id !== this.lastMessage) {
+      this.lastMessage = res.message.message_id;
+      if (!this.server.user.has(res.message.from.username || res.message.from.first_name)) {
+        this.server.user.set(res.message.from.username || res.message.from.first_name, {
+          nick: res.message.from.first_name,
+          username: res.message.from.username,
+          account: res.message.from.id.toString(),
+          prefix: `${res.message.from.username}!${res.message.from.id.toString()}`,
+          id: res.message.from.id
+        });
       }
-    }
-    catch {
-      return this.emit("data", ["error", "tg timed out lol"]);
-    }
-    finally {
-      setTimeout(async () => { await this.poll(); }, this.options.pollrate);
+      return this.emit("data", ["message", this.reply(res.message)]);
     }
   }
   async send(chatid, msg, reply = null) {
+    msg = Array.isArray(msg) ? msg.join("\n") : msg;
     if (msg.length === 0 || msg.length > 2048)
       return this.emit("data", ["error", "msg to short or to long lol"]);
     const opts = {
       method: "POST",
       body: {
         chat_id: chatid,
-        text: msg.split("\n").length > 1 ? `<code>${msg}</code>` : msg,
+        text: this.format(msg),//msg.split("\n").length > 1 ? `<code>${this.format(msg)}</code>` : this.format(msg),
         parse_mode: "HTML"
       }
     };
@@ -105,9 +99,9 @@ export default class tg extends EventEmitter {
       message: tmp.text,
       time: tmp.date,
       raw: tmp,
-      reply: msg => this.send(tmp.chat.id, this.format(msg), tmp.message_id),
-      replyAction: msg => this.send(tmp.chat.id, this.format(`Uwe ${msg}`), tmp.message_id),
-      replyNotice: msg => this.send(tmp.chat.id, this.format(msg), tmp.message_id),
+      reply: msg => this.send(tmp.chat.id, msg, tmp.message_id),
+      replyAction: msg => this.send(tmp.chat.id, `Uwe ${msg}`, tmp.message_id),
+      replyNotice: msg => this.send(tmp.chat.id, msg, tmp.message_id),
       _user: this.server.user
     };
   }
@@ -115,6 +109,7 @@ export default class tg extends EventEmitter {
     return msg.toString()
       .split("<").join("&lt;")
       .split(">").join("&gt;")
+      .split("&").join("&amp;")
       .replace(/\[b\](.*?)\[\/b\]/g, "<b>$1</b>") // bold
       .replace(/\[i\](.*?)\[\/i\]/g, "<i>$1</i>") // italic
       .replace(/\[color=(.*?)](.*?)\[\/color\]/g, "$2")
