@@ -45,9 +45,9 @@ export default class tg extends EventEmitter {
       let res = await (await fetch(`${this.api}/getUpdates?offset=${this.lastUpdate}&allowed_updates=message`)).json();
       
       if (!res.ok)
-        return this.emit("data", ["error", res.description]);
+        throw { type: "tg", message: res.description};
       if (res.result.length === 0)
-        return;
+        throw { type: "generic", message: "empty response" };
     
       res = res.result[res.result.length - 1];
       this.lastUpdate = res.update_id + 1;
@@ -62,11 +62,14 @@ export default class tg extends EventEmitter {
             id: res.message.from.id
           });
         }
-        return this.emit("data", ["message", this.reply(res.message)]);
+        this.emit("data", ["message", this.reply(res.message)]);
       }
     }
-    catch(lel) {
-      return this.emit("data", ["error", "tg timed out lol"]);
+    catch(err) {
+      if(!err.type)
+        this.emit("data", ["error", "tg timed out lol"]);
+      else if(err.type === "tg")
+        this.emit("data", ["error", err.message]);
     }
     finally {
       setTimeout(async () => { await this.poll(); }, this.options.pollrate);
@@ -80,7 +83,7 @@ export default class tg extends EventEmitter {
       method: "POST",
       body: {
         chat_id: chatid,
-        text: this.format(msg),//msg.split("\n").length > 1 ? `<code>${this.format(msg)}</code>` : this.format(msg),
+        text: this.format(msg),
         parse_mode: "HTML"
       }
     };
