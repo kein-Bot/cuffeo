@@ -41,27 +41,35 @@ export default class tg extends EventEmitter {
     };
   }
   async poll() {
-    let res = await (await fetch(`${this.api}/getUpdates?offset=${this.lastUpdate}&allowed_updates=message`)).json();
-    setTimeout(async () => { await this.poll(); }, this.options.pollrate);
-    if (!res.ok)
-      return this.emit("data", ["error", res.description]);
-    if (res.result.length === 0)
-      return;
+    try {
+      let res = await (await fetch(`${this.api}/getUpdates?offset=${this.lastUpdate}&allowed_updates=message`)).json();
+      
+      if (!res.ok)
+        return this.emit("data", ["error", res.description]);
+      if (res.result.length === 0)
+        return;
     
-    res = res.result[res.result.length - 1];
-    this.lastUpdate = res.update_id + 1;
-    if (res.message.date >= ~~(Date.now() / 1000) - 10 && res.message.message_id !== this.lastMessage) {
-      this.lastMessage = res.message.message_id;
-      if (!this.server.user.has(res.message.from.username || res.message.from.first_name)) {
-        this.server.user.set(res.message.from.username || res.message.from.first_name, {
-          nick: res.message.from.first_name,
-          username: res.message.from.username,
-          account: res.message.from.id.toString(),
-          prefix: `${res.message.from.username}!${res.message.from.id.toString()}`,
-          id: res.message.from.id
-        });
+      res = res.result[res.result.length - 1];
+      this.lastUpdate = res.update_id + 1;
+      if (res.message.date >= ~~(Date.now() / 1000) - 10 && res.message.message_id !== this.lastMessage) {
+        this.lastMessage = res.message.message_id;
+        if (!this.server.user.has(res.message.from.username || res.message.from.first_name)) {
+          this.server.user.set(res.message.from.username || res.message.from.first_name, {
+            nick: res.message.from.first_name,
+            username: res.message.from.username,
+            account: res.message.from.id.toString(),
+            prefix: `${res.message.from.username}!${res.message.from.id.toString()}`,
+            id: res.message.from.id
+          });
+        }
+        return this.emit("data", ["message", this.reply(res.message)]);
       }
-      return this.emit("data", ["message", this.reply(res.message)]);
+    }
+    catch(lel) {
+      return this.emit("data", ["error", "tg timed out lol"]);
+    }
+    finally {
+      setTimeout(async () => { await this.poll(); }, this.options.pollrate);
     }
   }
   async send(chatid, msg, reply = null) {
