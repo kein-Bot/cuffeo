@@ -78,8 +78,7 @@ export default class tg extends EventEmitter {
     };
     if (reply)
       opts.body.reply_to_message_id = reply;
-    const res = await (await fetch(`${this.api}/sendMessage`, opts)).json();
-    console.log(res);
+    await fetch(`${this.api}/sendMessage`, opts);
   }
   async sendmsg(mode, recipient, msg) {
     await this.send(recipient, msg);
