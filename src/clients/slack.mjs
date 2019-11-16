@@ -66,7 +66,7 @@ export default class slack extends EventEmitter {
     return this.server.wss.socket.send(JSON.stringify({
       type: "message",
       channel: channel,
-      text: text
+      text: this.format(text)
     }));
   }
 
@@ -90,6 +90,18 @@ export default class slack extends EventEmitter {
       replyAction: msg => this.send(tmp.channel, `Uwe ${msg}`),
       replyNotice: msg => this.send(tmp.channel, msg)
     };
+  }
+
+  format(msg) {
+    return msg.toString()
+      .split("<").join("&lt;")
+      .split(">").join("&gt;")
+      .split("&").join("&amp;")
+      .replace(/\[b\](.*?)\[\/b\]/g, "*$1*") // bold
+      .replace(/\[s\](.*?)\[\/s\]/g, "~$1~") // strike
+      .replace(/\[i\](.*?)\[\/i\]/g, "_$1_") // italic
+      .replace(/\[color=(.*?)](.*?)\[\/color\]/g, "$2")
+    ;
   }
 
 }
