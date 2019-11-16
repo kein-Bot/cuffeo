@@ -3,8 +3,7 @@
   "version": "1.0.1",
   "description": "lul",
   "main": "src/index.mjs",
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git@gitfap.de:keinBot/cuffeo.git"
@@ -12,6 +11,7 @@
   "author": "Flummi",
   "license": "ISC",
   "dependencies": {
-    "flumm-fetch-cookies": "git+https://gitfap.de/keinBot/flumm-fetch-cookies"
+    "flumm-fetch-cookies": "git+https://gitfap.de/keinBot/flumm-fetch-cookies",
+    "ws": "^7.2.0"
   }
 }
