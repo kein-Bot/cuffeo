@@ -62,7 +62,7 @@ export default class slack extends EventEmitter {
     
   }
 
-  async send({ channel, text }) {
+  async send(channel, text) {
     return this.server.wss.socket.send(JSON.stringify({
       type: "message",
       channel: channel,
@@ -86,9 +86,9 @@ export default class slack extends EventEmitter {
       message: tmp.text,
       time: ~~(Date.now() / 1000),
       raw: tmp,
-      reply: msg => this.send(tmp.channel, msg, tmp.message_id),
-      replyAction: msg => this.send(tmp.channel, `Uwe ${msg}`, tmp.message_id),
-      replyNotice: msg => this.send(tmp.channel, msg, tmp.message_id)
+      reply: msg => this.send(tmp.channel, msg),
+      replyAction: msg => this.send(tmp.channel, `Uwe ${msg}`),
+      replyNotice: msg => this.send(tmp.channel, msg)
     };
   }
 
