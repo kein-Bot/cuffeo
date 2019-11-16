@@ -11,7 +11,6 @@
   "author": "Flummi",
   "license": "ISC",
   "dependencies": {
-    "flumm-fetch-cookies": "git+https://gitfap.de/keinBot/flumm-fetch-cookies",
-    "ws": "^7.2.0"
+    "flumm-fetch-cookies": "git+https://gitfap.de/keinBot/flumm-fetch-cookies"
   }
 }
