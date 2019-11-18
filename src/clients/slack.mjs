@@ -31,7 +31,7 @@ export default class slack extends EventEmitter {
   async connect() {
     const res = await (await fetch(`${this.api}/rtm.connect?token=${this.token}`)).json();
     if (!res.ok)
-      throw this.emit("data", ["error", res.description]); // more infos
+      throw this.emit("data", [ "error", res.description ]); // more infos
 
     this.server.wss.url = url.parse(res.url);
 
@@ -47,23 +47,73 @@ export default class slack extends EventEmitter {
       }
     }).on("upgrade", (_, sock) => {
       this.server.wss.socket = sock;
+      this.server.wss.socket.setDefaultEncoding("utf-8");
+
+      setInterval(async () => await this.ping(), 3e4); // 30 seconds lul
 
       this.server.wss.socket.on("data", data => {
-        data = JSON.parse(data.slice(data.indexOf("{")).toString());
+        data = data.toString("utf-8").replace(/\0/g, "");
+        data = JSON.parse(data.substr(data.indexOf("{")));
+
+        //console.log(data, data.type);
+
         if(data.type !== "message")
           return false;
 
-        return this.emit("data", ["message", this.reply(data)]);
+        return this.emit("data", [ "message", this.reply(data) ]);
       })
+      .on("end", () => this.emit("data", [ "debug", "stream ended" ]))
+      .on("error", err => this.emit("data", [ "error", err ]));
+      /*.on("drain", console.log)
+      .on("close", console.log)
+      .on("finish", console.log)
+      .on("timeout", console.log)*/
     });
   }
 
   async send(channel, text) {
-    return this.server.wss.socket.send(JSON.stringify({
+    await this.write({
       type: "message",
       channel: channel,
       text: this.format(text)
-    }));
+    });
+  }
+
+  async ping() {
+    await this.write({
+      type: "ping"
+    });
+  }
+
+  async write(json) {
+    const msg = JSON.stringify(json);
+
+    const payload = Buffer.from(msg);
+
+    if(payload.length > 2 ** 14) // 16KB limit
+      throw this.emit("data", [ "error", "message too long, slack limit reached" ]);
+
+    let frame_length = 6;
+    let frame_payload_length = payload.length;
+
+    if(payload.length > 125) {
+      frame_length += 2;
+      frame_payload_length = 126;
+    }
+
+    const frame = Buffer.alloc(frame_length);
+
+    // set mask bit but leave mask key empty (= 0), so we don't have to mask the message
+    frame.writeUInt16BE(0x8180 | frame_payload_length);
+
+    if(frame_length > 6)
+      frame.writeUInt16BE(payload.length, 2);
+
+    this.server.wss.socket.cork();
+    this.server.wss.socket.write(frame);
+    this.server.wss.socket.write(Buffer.from(msg));
+    this.server.wss.socket.uncork();
+    return true;
   }
 
   reply(tmp) {
