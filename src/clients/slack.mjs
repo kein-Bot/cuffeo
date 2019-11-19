@@ -62,18 +62,22 @@ export default class slack extends EventEmitter {
       setInterval(async () => await this.ping(), 3e4); // 30 seconds lul
 
       this.server.wss.socket.on("data", async data => {
-        data = data.toString("utf-8").replace(/\0/g, "");
-        data = JSON.parse(data.substr(data.indexOf("{")));
+        try {
+          data = data.toString("utf-8").replace(/\0/g, "");
+          data = JSON.parse(data.substr(data.indexOf("{")));
 
-        //console.log(data, data.type);
+          //console.log(data, data.type);
 
-        if(data.type !== "message")
+          if(data.type !== "message")
           return false;
 
-        await Promise.all([this.getChannel(data.channel), this.getUser(data.user)]).catch(err => this.emit("data", [ "error", err ]));
-        //await this.getUser(data.user).catch(err => this.emit("data", [ "error", err ]));
+          await Promise.all([this.getChannel(data.channel), this.getUser(data.user)]);
 
-        return this.emit("data", [ "message", this.reply(data) ]);
+          return this.emit("data", [ "message", this.reply(data) ]);
+        }
+        catch(err) {
+          this.emit("data", [ "error", err ]);
+        }
       })
       .on("end", () => this.emit("data", [ "debug", "stream ended" ]))
       .on("error", err => this.emit("data", [ "error", err ]));
