@@ -14,8 +14,8 @@ export default class slack extends EventEmitter {
     this.socket = null;
     this.server = {
       set: this.set,
-      channel: null,
-      user: null,
+      channel: new Map(),
+      user: new Map(),
       wss: {
         url: null,
         socket: null
@@ -29,7 +29,17 @@ export default class slack extends EventEmitter {
     })();
   }
   async connect() {
-    const res = await (await fetch(`${this.api}/rtm.connect?token=${this.token}`)).json();
+    const res = await (await fetch(`${this.api}/rtm.start?token=${this.token}`)).json();
+    res.channels.forEach(channel => {
+      this.server.channel.set(channel.id, channel.name);
+    });
+    res.users.forEach(user => {
+      this.server.user.set(user.id, {
+        account: user.name,
+        nickname: user.real_name
+      });
+    });
+
     if (!res.ok)
       throw this.emit("data", [ "error", res.description ]); // more infos
 
@@ -51,7 +61,7 @@ export default class slack extends EventEmitter {
 
       setInterval(async () => await this.ping(), 3e4); // 30 seconds lul
 
-      this.server.wss.socket.on("data", data => {
+      this.server.wss.socket.on("data", async data => {
         data = data.toString("utf-8").replace(/\0/g, "");
         data = JSON.parse(data.substr(data.indexOf("{")));
 
@@ -59,6 +69,9 @@ export default class slack extends EventEmitter {
 
         if(data.type !== "message")
           return false;
+
+        await Promise.all([this.getChannel(data.channel), this.getUser(data.user)]).catch(err => this.emit("data", [ "error", err ]));
+        //await this.getUser(data.user).catch(err => this.emit("data", [ "error", err ]));
 
         return this.emit("data", [ "message", this.reply(data) ]);
       })
@@ -68,6 +81,26 @@ export default class slack extends EventEmitter {
       .on("close", console.log)
       .on("finish", console.log)
       .on("timeout", console.log)*/
+    });
+  }
+
+  async getChannel(channelId) {
+    if(this.server.channel.has(channelId))
+      return this.server.channel.get(channelId);
+
+    const res = await (await fetch(`${this.api}/conversations.info?channel=${channelId}&token=${this.token}`)).json();
+    this.server.channel.set(channelId, res.channel.name);
+    return res.channel.name;
+  }
+
+  async getUser(userId) {
+    if(this.server.user.has(userId))
+      return this.server.user.get(userId);
+
+    const res = await (await fetch(`${this.api}/users.info?user=${userId}&token=${this.token}`)).json();
+    this.server.user.set(userId, {
+      account: res.user.name,
+      nickname: res.user.real_name
     });
   }
 
@@ -113,20 +146,19 @@ export default class slack extends EventEmitter {
     this.server.wss.socket.write(frame);
     this.server.wss.socket.write(Buffer.from(msg));
     this.server.wss.socket.uncork();
-    return true;
   }
 
   reply(tmp) {
     return {
       type: "slack",
       network: "Slack",
-      channel: tmp.channel, // get channelname
+      channel: this.server.channel.get(tmp.channel), // get channelname
       channelid: tmp.channel,
       user: {
-        prefix: `${tmp.user}!${tmp.user}`, // get username
-        nick: tmp.user, // get username
-        username: tmp.user,  // get username
-        account: tmp.user
+        prefix: `${tmp.user}!${this.server.user.get(tmp.user).account}`, // get username
+        nick: this.server.user.get(tmp.user).nickname, // get username
+        username: this.server.user.get(tmp.user).nickname,  // get username
+        account: this.server.user.get(tmp.user).account
       },
       self: this.server,
       message: tmp.text,
