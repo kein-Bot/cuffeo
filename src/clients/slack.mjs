@@ -30,18 +30,15 @@ export default class slack extends EventEmitter {
   }
   async connect() {
     const res = await (await fetch(`${this.api}/rtm.start?token=${this.token}`)).json();
-    res.channels.forEach(channel => {
-      this.server.channel.set(channel.id, channel.name);
-    });
-    res.users.forEach(user => {
-      this.server.user.set(user.id, {
-        account: user.name,
-        nickname: user.real_name
-      });
-    });
+
+    res.channels.forEach(channel => this.server.channel.set(channel.id, channel.name));
+    res.users.forEach(user => this.server.user.set(user.id, {
+      account: user.name,
+      nickname: user.real_name
+    }));
 
     if (!res.ok)
-      throw this.emit("data", [ "error", res.description ]); // more infos
+      return this.emit("data", [ "error", res.description ]); // more infos
 
     this.server.wss.url = url.parse(res.url);
 
@@ -63,13 +60,27 @@ export default class slack extends EventEmitter {
 
       this.server.wss.socket.on("data", async data => {
         try {
-          data = data.toString("utf-8").replace(/\0/g, "");
-          data = JSON.parse(data.substr(data.indexOf("{")));
+          if(data.length < 2)
+            throw "payload too short";
+          if(data[1] & 0x80)
+            throw "we no accept masked data";
+          let offset = 2;
+          let length = data[1] & 0x7F;
+          if(length === 126) {
+            offset = 4;
+            length = data.readUInt16BE(2);
+          }
+          else if(length === 127)
+            throw "payload too long";
+          if(data.length < length + offset)
+            throw "payload shorter than given length";
+          //console.log(data, offset, length);
+          data = JSON.parse(data.slice(offset, length + offset).toString().replace(/\0+$/, "")); // trim null bytes at the end
 
           //console.log(data, data.type);
 
           if(data.type !== "message")
-          return false;
+            return false;
 
           await Promise.all([this.getChannel(data.channel), this.getUser(data.user)]);
 
@@ -81,10 +92,6 @@ export default class slack extends EventEmitter {
       })
       .on("end", () => this.emit("data", [ "debug", "stream ended" ]))
       .on("error", err => this.emit("data", [ "error", err ]));
-      /*.on("drain", console.log)
-      .on("close", console.log)
-      .on("finish", console.log)
-      .on("timeout", console.log)*/
     });
   }
 
