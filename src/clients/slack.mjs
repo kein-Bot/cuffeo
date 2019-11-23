@@ -90,9 +90,21 @@ export default class slack extends EventEmitter {
           this.emit("data", [ "error", err ]);
         }
       })
-      .on("end", () => this.emit("data", [ "debug", "stream ended" ]))
-      .on("error", err => this.emit("data", [ "error", err ]));
+      .on("end", () => {
+        this.emit("data", [ "debug", "stream ended" ]);
+        this.reconnect();
+      })
+      .on("error", err => {
+        this.emit("data", [ "error", err ]);
+        this.reconnect();
+      });
     });
+  }
+
+  reconnect() {
+    this.server.wss.url = null;
+    this.server.wss.socket = null;
+    this.connect();
   }
 
   async getChannel(channelId) {
