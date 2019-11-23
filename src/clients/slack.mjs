@@ -176,7 +176,7 @@ export default class slack extends EventEmitter {
       time: ~~(Date.now() / 1000),
       raw: tmp,
       reply: msg => this.send(tmp.channel, msg),
-      replyAction: msg => this.send(tmp.channel, `Uwe ${msg}`),
+      replyAction: msg => this.send(tmp.channel, `[i]${msg}[/i]`),
       replyNotice: msg => this.send(tmp.channel, msg)
     };
   }
