@@ -1,16 +1,26 @@
 {
   "name": "cuffeo",
-  "version": "1.0.1",
-  "description": "lul",
+  "version": "1.0.2",
+  "description": "A multi-protocol chatbot library with nearly zero dependencies.",
   "main": "src/index.mjs",
   "scripts": {},
   "repository": {
     "type": "git",
-    "url": "git@gitfap.de:keinBot/cuffeo.git"
+    "url": "git@github.com:kein-Bot/cuffeo.git"
   },
-  "author": "Flummi",
-  "license": "ISC",
+  "keywords": [
+    "cuffeo",
+    "irc",
+    "telegram",
+    "slack"
+  ],
+  "author": "Flummi & jkhsjdhjs",
+  "license": "MIT",
   "dependencies": {
-    "flumm-fetch-cookies": "git+https://gitfap.de/keinBot/flumm-fetch-cookies"
-  }
+    "flumm-fetch-cookies": "^1.1.1"
+  },
+  "bugs": {
+    "url": "https://github.com/kein-Bot/cuffeo/issues"
+  },
+  "homepage": "https://github.com/kein-Bot/cuffeo#readme"
 }
