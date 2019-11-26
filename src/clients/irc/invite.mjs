@@ -3,7 +3,7 @@ export default bot => {
     const user = bot.parsePrefix(msg.prefix);
     const channel = msg.params[1];
 
-    if(!bot.server.channel.includes(channel)) {
+    if(!bot.server.channel.has(channel)) {
       bot.join(channel);
       setTimeout(() => {
         bot.send(`PRIVMSG ${channel} :Hi. Wurde von ${user.nick} eingeladen.`);

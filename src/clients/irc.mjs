@@ -105,7 +105,7 @@ export default class irc extends EventEmitter {
       channel: tmp.params[0],
       channelid: tmp.params[0],
       user: { ...this.parsePrefix(tmp.prefix), ...{
-        account: this.server.user.get(this.parsePrefix(tmp.prefix).nick).account,
+        account: this.server.user.has(this.parsePrefix(tmp.prefix).nick) ? this.server.user.get(this.parsePrefix(tmp.prefix).nick).account : false,
         prefix: tmp.prefix.charAt(0) === ":" ? tmp.prefix.substring(1) : tmp.prefix
       }},
       message: tmp.params[1].replace(/\u0002/, ""),
