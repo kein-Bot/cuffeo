@@ -128,6 +128,8 @@ export default class slack extends EventEmitter {
   }
 
   async send(channel, text) {
+    text = Array.isArray(text) ? text.join("\n") : text;
+    text = text.includes("\n") ? "```" + text + "```" : text;
     await this.write({
       type: "message",
       channel: channel,
