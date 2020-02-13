@@ -31,14 +31,14 @@ export default class slack extends EventEmitter {
   async connect() {
     const res = await (await fetch(`${this.api}/rtm.start?token=${this.token}`)).json();
 
+    if (!res.ok)
+      return this.emit("data", [ "error", res.description ]); // more infos
+
     res.channels.forEach(channel => this.server.channel.set(channel.id, channel.name));
     res.users.forEach(user => this.server.user.set(user.id, {
       account: user.name,
       nickname: user.real_name
     }));
-
-    if (!res.ok)
-      return this.emit("data", [ "error", res.description ]); // more infos
 
     this.server.wss.url = url.parse(res.url);
 
@@ -60,26 +60,26 @@ export default class slack extends EventEmitter {
 
       this.server.wss.socket.on("data", async data => {
         try {
-          if(data.length < 2)
+          if (data.length < 2)
             throw "payload too short";
-          if(data[1] & 0x80)
+          if (data[1] & 0x80)
             throw "we no accept masked data";
           let offset = 2;
           let length = data[1] & 0x7F;
-          if(length === 126) {
+          if (length === 126) {
             offset = 4;
             length = data.readUInt16BE(2);
           }
           else if(length === 127)
             throw "payload too long";
-          if(data.length < length + offset)
+          if (data.length < length + offset)
             throw "payload shorter than given length";
           //console.log(data, offset, length);
           data = JSON.parse(data.slice(offset, length + offset).toString().replace(/\0+$/, "")); // trim null bytes at the end
 
           //console.log(data, data.type);
 
-          if(data.type !== "message")
+          if (data.type !== "message")
             return false;
 
           await Promise.all([this.getChannel(data.channel), this.getUser(data.user)]);
@@ -90,25 +90,25 @@ export default class slack extends EventEmitter {
           this.emit("data", [ "error", err ]);
         }
       })
-      .on("end", () => {
+      .on("end", async () => {
         this.emit("data", [ "debug", "stream ended" ]);
-        this.reconnect();
+        await this.reconnect();
       })
-      .on("error", err => {
+      .on("error", async err => {
         this.emit("data", [ "error", err ]);
-        this.reconnect();
+        await this.reconnect();
       });
     });
   }
 
-  reconnect() {
+  async reconnect() {
     this.server.wss.url = null;
     this.server.wss.socket = null;
-    this.connect();
+    await this.connect();
   }
 
   async getChannel(channelId) {
-    if(this.server.channel.has(channelId))
+    if (this.server.channel.has(channelId))
       return this.server.channel.get(channelId);
 
     const res = await (await fetch(`${this.api}/conversations.info?channel=${channelId}&token=${this.token}`)).json();
@@ -117,7 +117,7 @@ export default class slack extends EventEmitter {
   }
 
   async getUser(userId) {
-    if(this.server.user.has(userId))
+    if (this.server.user.has(userId))
       return this.server.user.get(userId);
 
     const res = await (await fetch(`${this.api}/users.info?user=${userId}&token=${this.token}`)).json();
@@ -166,6 +166,9 @@ export default class slack extends EventEmitter {
 
     if(frame_length > 6)
       frame.writeUInt16BE(payload.length, 2);
+
+    if (!this.server.wss.socket)
+      await this.reconnect();
 
     this.server.wss.socket.cork();
     this.server.wss.socket.write(frame);
