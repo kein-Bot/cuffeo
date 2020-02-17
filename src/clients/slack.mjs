@@ -104,7 +104,8 @@ export default class slack extends EventEmitter {
   async reconnect() {
     this.server.wss.url = null;
     this.server.wss.socket = null;
-    await this.connect();
+    this.emit("data", [ "info", "reconnecting slack" ]);
+    return await this.connect();
   }
 
   async getChannel(channelId) {
