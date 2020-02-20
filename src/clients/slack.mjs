@@ -184,7 +184,7 @@ export default class slack extends EventEmitter {
       channel: this.server.channel.get(tmp.channel), // get channelname
       channelid: tmp.channel,
       user: {
-        prefix: `${tmp.user}!${this.server.user.get(tmp.user).account}@${this.network}`, // get username
+        prefix: `${this.server.user.get(tmp.user).account}!${tmp.user}@${this.network}`, // get username
         nick: this.server.user.get(tmp.user).nickname, // get username
         username: this.server.user.get(tmp.user).nickname,  // get username
         account: this.server.user.get(tmp.user).account
