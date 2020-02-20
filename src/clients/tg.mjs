@@ -101,7 +101,7 @@ export default class tg extends EventEmitter {
       channel: tmp.chat.title,
       channelid: tmp.chat.id,
       user: {
-        prefix: `${tmp.from.username}!${tmp.from.id}`,
+        prefix: `${tmp.from.username}!${tmp.from.id}@${this.network}`,
         nick: tmp.from.first_name,
         username: tmp.from.username,
         account: tmp.from.id.toString()
