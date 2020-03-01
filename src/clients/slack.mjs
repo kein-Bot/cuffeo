@@ -12,6 +12,7 @@ export default class slack extends EventEmitter {
     this.network = "Slack";
     this.api = "https://slack.com/api";
     this.socket = null;
+    this.interval = null;
     this.server = {
       set: this.set,
       channel: new Map(),
@@ -56,7 +57,7 @@ export default class slack extends EventEmitter {
       this.server.wss.socket = sock;
       this.server.wss.socket.setDefaultEncoding("utf-8");
 
-      setInterval(async () => await this.ping(), 3e4); // 30 seconds lul
+      this.interval = setInterval(async () => await this.ping(), 3e4); // 30 seconds lul
 
       this.server.wss.socket.on("data", async data => {
         try {
@@ -104,6 +105,7 @@ export default class slack extends EventEmitter {
   async reconnect() {
     this.server.wss.url = null;
     this.server.wss.socket = null;
+    clearTimeout(this.interval);
     this.emit("data", [ "info", "reconnecting slack" ]);
     return await this.connect();
   }
@@ -139,7 +141,7 @@ export default class slack extends EventEmitter {
   }
 
   async ping() {
-    await this.write({
+    return await this.write({
       type: "ping"
     });
   }
@@ -171,10 +173,14 @@ export default class slack extends EventEmitter {
     if (!this.server.wss.socket)
       await this.reconnect();
 
-    this.server.wss.socket.cork();
-    this.server.wss.socket.write(frame);
-    this.server.wss.socket.write(Buffer.from(msg));
-    this.server.wss.socket.uncork();
+    try {
+      this.server.wss.socket.cork();
+      this.server.wss.socket.write(frame);
+      this.server.wss.socket.write(Buffer.from(msg));
+      this.server.wss.socket.uncork();
+    } catch(err) {
+      console.error(err);
+    }
   }
 
   reply(tmp) {
