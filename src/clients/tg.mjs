@@ -58,7 +58,7 @@ export default class tg extends EventEmitter {
             nick: res.message.from.first_name,
             username: res.message.from.username,
             account: res.message.from.id.toString(),
-            prefix: `${res.message.from.username}!${res.message.from.id.toString()}`,
+            prefix: `${res.message.from.username}!${res.message.from.id.toString()}@${this.network}`,
             id: res.message.from.id
           });
         }
