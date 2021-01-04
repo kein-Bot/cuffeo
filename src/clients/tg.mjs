@@ -40,6 +40,12 @@ export default class tg extends EventEmitter {
       id: res.result.id.toString()
     };
   }
+  async getPhoto(file_id) {
+    const res = await (await fetch(`${this.api}/getFile?file_id=${file_id}`)).json();
+    if(!res.ok)
+      return false;
+    return `https://api.telegram.org/file/bot${this.token}/${res.result.file_path}`;
+  }
   async poll() {
     try {
       let res = await (await fetch(`${this.api}/getUpdates?offset=${this.lastUpdate}&allowed_updates=message`)).json();
@@ -51,9 +57,10 @@ export default class tg extends EventEmitter {
     
       res = res.result[res.result.length - 1];
       this.lastUpdate = res.update_id + 1;
-      if (res.message.date >= ~~(Date.now() / 1000) - 10 && res.message.message_id !== this.lastMessage) {
+
+      if(res.message.date >= ~~(Date.now() / 1000) - 10 && res.message.message_id !== this.lastMessage) {
         this.lastMessage = res.message.message_id;
-        if (!this.server.user.has(res.message.from.username || res.message.from.first_name)) {
+        if(!this.server.user.has(res.message.from.username || res.message.from.first_name)) {
           this.server.user.set(res.message.from.username || res.message.from.first_name, {
             nick: res.message.from.first_name,
             username: res.message.from.username,
@@ -62,6 +69,16 @@ export default class tg extends EventEmitter {
             id: res.message.from.id
           });
         }
+        if(res.message.photo) {
+          const photo_path = await this.getPhoto(res.message.photo[res.message.photo.length - 1].file_id);
+          res.message.text = res.message.caption;
+          res.message.photo = photo_path;
+          /*this.emit("data", ["photo", {
+            photo:   photo_path,
+            message: this.reply(res.message)
+          }]);*/
+        }
+
         this.emit("data", ["message", this.reply(res.message)]);
       }
     }
