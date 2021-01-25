@@ -55,6 +55,17 @@ export default class irc extends EventEmitter {
       channel: new Map(),
       user: new Map()
     };
+
+    return (async () => {
+      const dir = (await fs.readdir(`${__dirname}/irc`)).filter(f => f.endsWith(".mjs"));
+      await Promise.all(dir.map(async mod => {
+        return (await import(`${__dirname}/irc/${mod}`)).default(this);
+      }));
+      this.connect();
+      return this;
+    })();
+  }
+  connect() {
     this.socket = (this.options.ssl ? tls : net).connect({
       host: this.options.host,
       port: this.options.port,
@@ -73,11 +84,6 @@ export default class irc extends EventEmitter {
           this._cmd.get(cmd.command)(cmd);
       })
     });
-
-    return (async () => {
-      (await fs.readdir(`${__dirname}/irc`)).filter(f => f.endsWith(".mjs")).forEach(async mod => (await import(`./irc/${mod}`)).default(this));
-      return this;
-    })();
   }
   send(data) {
     this.socket.write(`${data}\n`);
