@@ -65,7 +65,9 @@ export default class irc extends EventEmitter {
       return this;
     })();
   }
-  connect() {
+  connect(reconnect = false) {
+    if(reconnect)
+      this.socket = null;
     this.socket = (this.options.ssl ? tls : net).connect({
       host: this.options.host,
       port: this.options.port,
@@ -75,6 +77,7 @@ export default class irc extends EventEmitter {
       this.send(`USER ${this.username} 0 * : ${this.realname}`);
       if (this.options.sasl)
         this.send("CAP LS");
+      this.emit("data", "[irc] connected!");
     });
     this.socket.setEncoding("utf-8");
     this.socket.on("data", msg => {
@@ -84,14 +87,21 @@ export default class irc extends EventEmitter {
           this._cmd.get(cmd.command)(cmd);
       })
     });
+    this.socket.on("end", () => {
+      this.connect(true);
+      return this.emit("data", ["error", "[irc] stream ended, reconnecting in progress"]);
+    });
   }
   send(data) {
-    this.socket.write(`${data}\n`);
+    if(this.socket)
+      this.socket.write(`${data}\n`);
+    else
+      this.emit("data", ["info", `[irc] nope: ${data}`]);
   }
   sendmsg(mode, recipient, msg) {
     msg = Array.isArray(msg) ? msg : msg.split(/\r?\n/);
     if (msg.length >= 5)
-      return this.emit("data", ["error", "too many lines"]);
+      return this.emit("data", ["error", "[irc] too many lines"]);
     msg.forEach(e => this.send( msgmodes[mode].replace("{recipient}", recipient).replace("{msg}", this.format(e.toString())) ));
   }
   parse(data, [a, ...b] = data.split(/ +:/), tmp = a.split(" ").concat(b)) {
@@ -148,7 +158,7 @@ export default class irc extends EventEmitter {
       if (tmpuser.cached < ~~(Date.now() / 1000) - this._recachetime)
         whois.push(u);
     }
-    this.emit("data", ["info", `whois > ${whois}`]);
+    this.emit("data", ["info", `[irc] whois > ${whois}`]);
     this.send(`WHOIS ${whois}`);
   }
   parsePrefix(prefix) {

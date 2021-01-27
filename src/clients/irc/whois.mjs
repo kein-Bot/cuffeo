@@ -30,7 +30,7 @@ export default bot => {
 
   bot._cmd.set("318", msg => { // whois_end
     let tmpuser = {};
-    bot.emit("data", ["info", `whois < ${msg.params[1]}`]);
+    //bot.emit("data", ["info", `whois < ${msg.params[1]}`]);
     if (bot.server.user.has(msg.params[1]))
       tmpuser = bot.server.user.get(msg.params[1]);
     tmpuser = {

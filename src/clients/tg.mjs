@@ -87,9 +87,12 @@ export default class tg extends EventEmitter {
         this.emit("data", ["error", "tg timed out lol"]);
       else if(err.type === "tg")
         this.emit("data", ["error", err.message]);
+      await this.connect();
     }
     finally {
-      setTimeout(async () => { await this.poll(); }, this.options.pollrate);
+      setTimeout(async () => {
+        await this.poll();
+      }, this.options.pollrate);
     }
   }
   async send(chatid, msg, reply = null) {
